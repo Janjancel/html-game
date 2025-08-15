@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Click the Orange Box Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f8ff;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin-top: 30px;
+      color: #333;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 600px;
+      height: 400px;
+      margin: 30px auto;
+      border: 2px solid #333;
+      background-color: #fff;
+      overflow: hidden;
+    }
+
+    .box {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    #orangeBox {
+      background-color: #ff6347;
+    }
+
+    #blueBox {
+      background-color: #1e90ff;
+    }
+
+    #score, #highScore, #timer {
+      font-size: 20px;
+      color: #444;
+      margin-top: 10px;
+    }
+
+    #message {
+      font-size: 28px;
+      color: red;
+      margin-top: 20px;
+    }
+
+    .controlBtn {
+      margin: 10px 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .controlBtn:hover {
+      background-color: #45a049;
+    }
+
+    #jumpScare {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      z-index: 9999;
+    }
+
+    #jumpScare video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Click the Orange Box!</h1>
+  <div id="score">Score: 0</div>
+  <div id="highScore">High Score: 0</div>
+  <div id="timer">Time left: 5.0s</div>
+  <div id="gameArea">
+    <div id="orangeBox" class="box"></div>
+    <div id="blueBox" class="box"></div>
+  </div>
+  <div id="message"></div>
+  <button class="controlBtn" id="restartBtn">Restart</button>
+  <button class="controlBtn" id="pauseBtn">Pause</button>
+  <button class="controlBtn" id="playBtn">Play</button>
+
+  <!-- Jump scare overlay -->
+  <div id="jumpScare">
+    <video id="scareVideo" autoplay muted>
+      <source src="video.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    <audio id="screamSound" src="https://www.soundjay.com/human/sounds/scream-01.mp3"></audio>
+  </div>
+
+  <script>
+    const orangeBox = document.getElementById("orangeBox");
+    const blueBox = document.getElementById("blueBox");
+    const scoreDisplay = document.getElementById("score");
+    const highScoreDisplay = document.getElementById("highScore");
+    const timerDisplay = document.getElementById("timer");
+    const message = document.getElementById("message");
+    const restartBtn = document.getElementById("restartBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const playBtn = document.getElementById("playBtn");
+    const gameArea = document.getElementById("gameArea");
+    const jumpScare = document.getElementById("jumpScare");
+    const screamSound = document.getElementById("screamSound");
+    const scareVideo = document.getElementById("scareVideo");
+
+    let score = 0;
+    let highScore = 0;
+    let timeLimit = 5.0;
+    let timeLeft = timeLimit;
+    let interval;
+    let gameActive = true;
+    let paused = false;
+    let scareTriggered = false;
+
+    function updateTimerDisplay() {
+      timerDisplay.textContent = "Time left: " + timeLeft.toFixed(1) + "s";
+    }
+
+    function startCountdown() {
+      clearInterval(interval);
+      timeLeft = timeLimit;
+      updateTimerDisplay();
+      interval = setInterval(() => {
+        if (!paused) {
+          timeLeft -= 0.1;
+          updateTimerDisplay();
+          if (timeLeft <= 0) {
+            clearInterval(interval);
+            gameOver();
+          }
+        }
+      }, 100);
+    }
+
+    function shuffleBoxes() {
+      const maxX = gameArea.clientWidth - orangeBox.clientWidth;
+      const maxY = gameArea.clientHeight - orangeBox.clientHeight;
+
+      const randomX1 = Math.floor(Math.random() * maxX);
+      const randomY1 = Math.floor(Math.random() * maxY);
+      const randomX2 = Math.floor(Math.random() * maxX);
+      const randomY2 = Math.floor(Math.random() * maxY);
+
+      orangeBox.style.left = randomX1 + "px";
+      orangeBox.style.top = randomY1 + "px";
+      blueBox.style.left = randomX2 + "px";
+      blueBox.style.top = randomY2 + "px";
+    }
+
+    function triggerJumpScare() {
+      jumpScare.style.display = "block";
+      screamSound.play();
+      scareVideo.currentTime = 0;
+      scareVideo.play();
+      setTimeout(() => {
+        jumpScare.style.display = "none";
+      }, 3000); // Show for 3 seconds
+    }
+
+    function gameOver() {
+      gameActive = false;
+      orangeBox.style.display = "none";
+      blueBox.style.display = "none";
+      message.textContent = "⛔ Game Over! Final Score: " + score;
+      if (score > highScore) {
+        highScore = score;
+        highScoreDisplay.textContent = "High Score: " + highScore;
+      }
+    }
+
+    function restartGame() {
+      score = 0;
+      timeLimit = 5.0;
+      scareTriggered = false;
+      scoreDisplay.textContent = "Score: 0";
+      timerDisplay.textContent = "Time left: " + timeLimit.toFixed(1) + "s";
+      message.textContent = "";
+      orangeBox.style.display = "block";
+      blueBox.style.display = "block";
+      gameActive = true;
+      paused = false;
+      shuffleBoxes();
+      startCountdown();
+    }
+
+    orangeBox.addEventListener("click", () => {
+      if (!gameActive || paused) return;
+      score++;
+      scoreDisplay.textContent = "Score: " + score;
+
+      if (score % 10 === 0 && timeLimit > 1.0) {
+        timeLimit -= 0.5;
+      }
+
+      if (score === 10 && !scareTriggered) {
+        scareTriggered = true;
+        triggerJumpScare();
+      }
+
+      shuffleBoxes();
+      startCountdown();
+    });
+
+    blueBox.addEventListener("click", () => {
+      if (!gameActive || paused) return;
+      gameOver();
+    });
+
+    pauseBtn.addEventListener("click", () => {
+      paused = true;
+    });
+
+    playBtn.addEventListener("click", () => {
+      if (!gameActive) return;
+      paused = false;
+    });
+
+    restartBtn.addEventListener("click", restartGame);
+
+    // Start the game
+    restartGame();
+  </script>
+
+</body>
+</html>
